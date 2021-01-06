@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<UnityGameFramework>
+  <ResourceEditor>
+    <Settings>
+      <SourceAssetRootPath>Assets/GameMain</SourceAssetRootPath>
+      <SourceAssetSearchPaths />
+      <SourceAssetUnionTypeFilter>t:Prefab t:Scene t:TextAsset t:ScriptableObject</SourceAssetUnionTypeFilter>
+      <SourceAssetUnionLabelFilter>l:AssetBundleInclusive</SourceAssetUnionLabelFilter>
+      <SourceAssetExceptTypeFilter>t:Script</SourceAssetExceptTypeFilter>
+      <SourceAssetExceptLabelFilter>l:AssetBundleExclusive</SourceAssetExceptLabelFilter>
+      <AssetSorter>Path</AssetSorter>
+    </Settings>
+  </ResourceEditor>
+</UnityGameFramework>

@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<UnityGameFramework>
+  <ResourceCollection>
+    <Resources>
+      <Resource Name="AssetData/Map/DarkCountry/Country" LoadType="0" Packed="False" />
+      <Resource Name="AssetData/Map/DarkForest/Forest" LoadType="0" Packed="False" />
+      <Resource Name="AssetData/UI/LoadingUIForm" LoadType="0" Packed="False" />
+      <Resource Name="AssetData/UI/TestUIForm" LoadType="0" Packed="False" />
+      <Resource Name="Cherry" LoadType="0" Packed="False" />
+      <Resource Name="Config/Log" LoadType="0" Packed="False" />
+      <Resource Name="Config/PreLog" LoadType="0" Packed="False" />
+      <Resource Name="DataTable/Chunk" LoadType="0" Packed="False" />
+      <Resource Name="DataTable/DataTableList" LoadType="0" Packed="False" />
+      <Resource Name="DataTable/Scene" LoadType="0" Packed="False" />
+      <Resource Name="DataTable/test" LoadType="0" Packed="False" />
+      <Resource Name="DataTable/UIForm" LoadType="0" Packed="False" />
+      <Resource Name="GameFramework" LoadType="0" Packed="False" />
+      <Resource Name="Scenes/Launcher" LoadType="0" Packed="False" />
+      <Resource Name="Scenes/TestScene" LoadType="0" Packed="False" />
+      <Resource Name="Scenes/TilemapEditScene" LoadType="0" Packed="False" />
+      <Resource Name="Scripts/Editor/Chunk/GameBrush" LoadType="0" Packed="False" />
+      <Resource Name="Scripts/Editor/Chunk/SourceTilemapData" LoadType="0" Packed="False" />
+      <Resource Name="Scripts/Editor/Chunk/TargetTilemapData" LoadType="0" Packed="False" />
+    </Resources>
+    <Assets>
+      <Asset Guid="07a26d7944431bd4482a0b322064f59d" ResourceName="Config/Log" />
+      <Asset Guid="12983a5b530804f40b66936120f4d54a" ResourceName="AssetData/UI/TestUIForm" />
+      <Asset Guid="1dff52ba26793be4297d7b27ab91cb6f" ResourceName="AssetData/UI/LoadingUIForm" />
+      <Asset Guid="2a76425eb7f376647b387d0e8dabfc4f" ResourceName="AssetData/Map/DarkForest/Forest" />
+      <Asset Guid="30f0c991fd08fed4298ff8bb4592c87e" ResourceName="DataTable/Scene" />
+      <Asset Guid="46963a5720fbbf647b04419784fad180" ResourceName="Cherry" />
+      <Asset Guid="5bc6121249c088449a00cdec3a8184d3" ResourceName="Scripts/Editor/Chunk/GameBrush" />
+      <Asset Guid="624129cd880e4eb4586bbb6d7453612d" ResourceName="DataTable/UIForm" />
+      <Asset Guid="6f010d9ef8a9c074bb55975ffe54c1d8" ResourceName="Scripts/Editor/Chunk/SourceTilemapData" />
+      <Asset Guid="70a404ab76adf544e8bf9e9423e5ffdb" ResourceName="DataTable/Chunk" />
+      <Asset Guid="796d422c31abca442bde4c137aa59832" ResourceName="DataTable/test" />
+      <Asset Guid="8593e1a5132106447ac348267c2f127a" ResourceName="GameFramework" />
+      <Asset Guid="8beab81208bad5f4394dee0aad258266" ResourceName="Scenes/Launcher" />
+      <Asset Guid="90c4e06b4c800b44ba405d048993e7d8" ResourceName="Config/PreLog" />
+      <Asset Guid="94a7f0539048df6419d7169421c318dd" ResourceName="AssetData/Map/DarkCountry/Country" />
+      <Asset Guid="9585db107eeea6e4484b2aceda330a15" ResourceName="Scenes/TilemapEditScene" />
+      <Asset Guid="b77e4ca99cfab5646ac64452b45e3a66" ResourceName="Scripts/Editor/Chunk/TargetTilemapData" />
+      <Asset Guid="e45475db4c77db444aa516f92a25dc5a" ResourceName="DataTable/DataTableList" />
+      <Asset Guid="f58806f37cbbc6a48b3d23fcfbfc64f7" ResourceName="Scenes/TestScene" />
+    </Assets>
+  </ResourceCollection>
+</UnityGameFramework>
