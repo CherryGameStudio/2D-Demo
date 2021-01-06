@@ -20,19 +20,22 @@ namespace Cherry
 		private readonly Dictionary<int, string> m_ChunksBeingLoaded;
 		private readonly HashSet<int> m_ChunksToReleaseOnLoad;
 		private readonly Queue<IChunk> m_RecycleQueue;
-		private readonly List<TilemapData> tilemapDatas;
+		private readonly List<ChunkParams> m_BeingSetTilemapDatas;
 		private readonly LoadAssetCallbacks m_LoadAssetCallbacks;
 		private IObjectPoolManager m_ObjectPoolManager;
 		private IResourceManager m_ResourceManager;
 		private IObjectPool<ChunkInstanceObject> m_InstancePool;
 		private IChunkHelper m_ChunkHelper;
-		private int m_SerialId;
-		[ThreadStatic]
+		private int m_ChunkId;
+
+		//上层缓存容器
+		private Dictionary<string,int> m_ChunkName2IdDict;
+		private List<int> m_BeingLoadedChunkIds;
 		private List<string> m_DependentAssetNames;
-		[ThreadStatic]
 		private List<string> m_BeingLoadedAssetNames;
-		[ThreadStatic]
 		private List<string> m_CachedAssetNames;
+		
+		
 		//todo 打开地图的一系列事件
 		
 		/// <summary>
@@ -44,13 +47,15 @@ namespace Cherry
 			m_ChunksBeingLoaded = new Dictionary<int, string>();
 			m_ChunksToReleaseOnLoad = new HashSet<int>();
 			m_RecycleQueue = new Queue<IChunk>();
-			tilemapDatas = new List<TilemapData>();
+			m_BeingSetTilemapDatas = new List<ChunkParams>();
 			m_LoadAssetCallbacks = new LoadAssetCallbacks(LoadAssetSuccessCallback,LoadAssetFailureCallback);
 			m_ObjectPoolManager = null;
 			m_ResourceManager = null;
 			m_InstancePool = null;
 			m_ChunkHelper = null;
-			m_SerialId = 0;
+			m_ChunkId = 0;
+			m_ChunkName2IdDict = new Dictionary<string, int>();
+			m_BeingLoadedChunkIds = new List<int>();
 			m_DependentAssetNames = new List<string>();
 			m_BeingLoadedAssetNames = new List<string>();
 			m_CachedAssetNames = new List<string>();
@@ -289,13 +294,13 @@ namespace Cherry
 			return false;
 		}
 
-		public IChunk GetChunk(int serialId)
+		public IChunk GetChunk(int chunkId)
 		{
 			foreach (KeyValuePair<string,ChunkGroup> chunkGroup in m_ChunkGroups)
 			{
-				if (chunkGroup.Value.HasChunk(serialId))
+				if (chunkGroup.Value.HasChunk(chunkId))
 				{
-					return chunkGroup.Value.GetChunk(serialId);
+					return chunkGroup.Value.GetChunk(chunkId);
 				}
 			}
 
@@ -375,7 +380,7 @@ namespace Cherry
 			}
 		}
 
-		public int[] GetAllLoadingChunkSerialId()
+		public int[] GetAllLoadingChunkId()
 		{
 			int index = 0;
 			int[] results = new int[m_ChunksBeingLoaded.Count];
@@ -387,7 +392,7 @@ namespace Cherry
 			return results;
 		}
 
-		public void GetAllLoadingChunkSerialId(List<int> results)
+		public void GetAllLoadingChunkId(List<int> results)
 		{
 			if (results == null)
 			{
@@ -404,11 +409,11 @@ namespace Cherry
 		/// <summary>
 		/// 是否正在加载界面。
 		/// </summary>
-		/// <param name="serialId">界面序列编号。</param>
+		/// <param name="chunkId">界面序列编号。</param>
 		/// <returns>是否正在加载界面。</returns>
-		public bool IsLoadingChunk(int serialId)
+		public bool IsLoadingChunk(int chunkId)
 		{
-			return m_ChunksBeingLoaded.ContainsKey(serialId);
+			return m_ChunksBeingLoaded.ContainsKey(chunkId);
 		}
 
 		/// <summary>
@@ -433,46 +438,143 @@ namespace Cherry
 				return false;
 			}
 
-			return HasChunk(chunk.SerialId);
+			return HasChunk(chunk.ChunkId);
 		}
 
-		public void LoadChunk(ChunkType chunkType)
+		public void LoadChunk(ChunkType chunkType , object userData = null)
 		{
 			string chunkAssetName = GameEntry.DataTable.GetDataTable<DRChunk>().GetDataRow((int)chunkType).ChunkAssetName;
-			LoadChunk(chunkAssetName);
-		}
-
-		public void LoadChunk(string chunkAssetName)
-		{
 			if (string.IsNullOrEmpty(chunkAssetName))
 			{
-				throw new GameFrameworkException("chunk asset name is invaild.");
+				throw new GameFrameworkException("chunkType name is invaild.");
 			}
 
-			int serialId = m_SerialId;
 			m_BeingLoadedAssetNames.Clear();
-			m_ChunkHelper.GetDependentChunkAssetNames(chunkAssetName, m_BeingLoadedAssetNames);
-			//m_DependentAssetNames.Clear();
-			//m_ChunkHelper.GetDependentChunkAssetNames(chunkAssetName, m_DependentAssetNames);
-			if (InternalGetBeingLoadedAssetNames(m_BeingLoadedAssetNames))
+			m_BeingLoadedChunkIds.Clear();
+			m_ChunkHelper.GetDependentChunkIds((int)chunkType,m_BeingLoadedChunkIds);
+			if (InternalGetBeingLoadedAssetNames(m_BeingLoadedChunkIds,m_BeingLoadedAssetNames))
 			{
 				foreach (string assetName in m_BeingLoadedAssetNames)
 				{
 					if (!m_ChunksBeingLoaded.ContainsValue(assetName) && !HasChunk(assetName))
 					{
-						serialId = ++m_SerialId;
-						m_ChunksBeingLoaded.Add(serialId, assetName);
-						//这边只是加载地图
-						m_ResourceManager.LoadAsset(assetName, m_LoadAssetCallbacks, LoadingChunkInfo.Create(serialId, null, false, true));
+						ChunkParams param = ReferencePool.Acquire<ChunkParams>();
+						if (m_ChunkName2IdDict.TryGetValue(assetName, out int dataRowId))
+						{
+							m_ChunksBeingLoaded.Add(dataRowId, assetName);
+							param.ChunkData = GameEntry.DataTable.GetDataTable<DRChunk>().GetDataRow(dataRowId);
+						}
+						else//保险起见，基本不会else中的情况，else中读表的复杂度为O(N)，if中为O(log2N)
+						{
+							DRChunk chunkData = GameEntry.DataTable.GetDataTable<DRChunk>().GetDataRow((DRChunk chunkdata) => { return chunkdata.ChunkAssetName == assetName; });
+							param.ChunkData = chunkData;
+							dataRowId = chunkData.Id;
+							m_ChunksBeingLoaded.Add(dataRowId, assetName);
+							m_ChunkName2IdDict.Add(chunkData.ChunkAssetName, chunkData.Id);
+						}
+						//这边只是加载地图，且需区分加载地图本身和其依赖
+						if (chunkAssetName == assetName)
+						{
+							param.UserData = userData;
+							m_ResourceManager.LoadAsset(assetName, m_LoadAssetCallbacks, LoadingChunkInfo.Create(dataRowId, param, false, true));
+						}
+						else
+						{
+							m_ResourceManager.LoadAsset(assetName, m_LoadAssetCallbacks, LoadingChunkInfo.Create(dataRowId, param, false, true));
+						}
 					}
 				}
 			}
+
 		}
 
-		public int EnterChunk(ChunkType chunkType,int priority,object userData)
+		public void EnterChunk(ChunkType chunkType,int priority,object userData)
 		{
 			string chunkAssetName = GameEntry.DataTable.GetDataTable<DRChunk>().GetDataRow((int)chunkType).ChunkAssetName;
-			return EnterChunk(chunkAssetName, priority, userData);
+			if (string.IsNullOrEmpty(chunkAssetName))
+			{
+				throw new GameFrameworkException("chunkType name is invalid.");
+			}
+
+			if (m_ResourceManager == null)
+			{
+				throw new GameFrameworkException("ResourceManager is invalid.");
+			}
+
+			if (m_ChunkHelper == null)
+			{
+				throw new GameFrameworkException("chunkHelper is invalid.");
+			}
+
+			m_BeingLoadedAssetNames.Clear();
+			m_BeingLoadedChunkIds.Clear();
+			m_ChunkHelper.GetDependentChunkIds((int)chunkType, m_BeingLoadedChunkIds);
+			if (InternalGetBeingLoadedAssetNames(m_BeingLoadedChunkIds, m_BeingLoadedAssetNames))
+			{
+				foreach (string assetName in m_BeingLoadedAssetNames)
+				{
+					if (!m_ChunksBeingLoaded.ContainsValue(assetName) && !HasChunk(assetName))
+					{
+						ChunkParams param = ReferencePool.Acquire<ChunkParams>();
+						if (m_ChunkName2IdDict.TryGetValue(assetName, out int dataRowId))
+						{
+							m_ChunksBeingLoaded.Add(dataRowId, assetName);
+							param.ChunkData = GameEntry.DataTable.GetDataTable<DRChunk>().GetDataRow(dataRowId);
+						}
+						else//保险起见，基本不会有else中的情况，else中读表的复杂度为O(N)，if中为O(log2N)
+						{
+							DRChunk chunkData = GameEntry.DataTable.GetDataTable<DRChunk>().GetDataRow((DRChunk chunkdata) => { return chunkdata.ChunkAssetName == assetName; });
+							param.ChunkData = chunkData;
+							dataRowId = chunkData.Id;
+							m_ChunksBeingLoaded.Add(dataRowId, assetName);
+							m_ChunkName2IdDict.Add(chunkData.ChunkAssetName, chunkData.Id);
+						}
+						if (chunkAssetName == assetName)
+						{
+							param.UserData = userData;
+							m_ResourceManager.LoadAsset(assetName, m_LoadAssetCallbacks, LoadingChunkInfo.Create(dataRowId, param, false, true));
+						}
+						else
+						{
+							m_ResourceManager.LoadAsset(assetName, m_LoadAssetCallbacks, LoadingChunkInfo.Create(dataRowId, param, false, true));
+						}
+					}
+				}
+			}
+
+			m_DependentAssetNames.Clear();
+			m_ChunkHelper.GetDependentChunkAssetNames(chunkAssetName, m_DependentAssetNames);
+			foreach (string assetName in m_DependentAssetNames)
+			{
+				if (m_InstancePool.CanSpawn(assetName))
+				{
+					ChunkInstanceObject chunkInstanceObject = m_InstancePool.Spawn(assetName);
+					m_InstancePool.SetLocked(chunkInstanceObject, true);
+
+					//保险起见，基本进入if中的情况，if中读表的复杂度为O(N)，不进入为O(log2N)
+					if (!m_ChunkName2IdDict.TryGetValue(assetName, out int dataRowId))
+					{
+						DRChunk chunkData = GameEntry.DataTable.GetDataTable<DRChunk>().GetDataRow((DRChunk chunkdata) => { return chunkdata.ChunkAssetName == assetName; });
+						dataRowId = chunkData.Id;
+						m_ChunkName2IdDict.Add(chunkData.ChunkAssetName, chunkData.Id);
+					}
+
+					DRChunk dataRow = GameEntry.DataTable.GetDataTable<DRChunk>().GetDataRow(dataRowId);
+					ChunkGroup tempChunkGroup = GetChunkGroup(dataRow.ChunkGroupName) as ChunkGroup;
+					IChunk tempChunk = m_ChunkHelper.CreateChunk(chunkInstanceObject.Target, tempChunkGroup, userData);
+					ChunkParams param = ReferencePool.Acquire<ChunkParams>();
+					param.ChunkData = dataRow;
+					param.UserData = userData;
+					param.TilemapData = chunkInstanceObject.ChunkAsset as TilemapData;
+
+					tempChunk.OnInit(dataRow.Id, assetName, m_DependentAssetNames, tempChunkGroup, false, param);
+					tempChunkGroup.AddChunk(tempChunk);
+					if (chunkAssetName == assetName)
+					{
+						tempChunk.OnEnter(param);
+					}
+				}
+			}
 		}
 
 		/// <summary>
@@ -483,6 +585,7 @@ namespace Cherry
 		/// <param name="priority"></param>
 		/// <param name="userData"></param>
 		/// <returns></returns>
+		[Obsolete]
 		public int EnterChunk(string chunkAssetName, int priority, object userData)
 		{
 			if (string.IsNullOrEmpty(chunkAssetName))
@@ -500,7 +603,7 @@ namespace Cherry
 				throw new GameFrameworkException("chunkHelper is invalid.");
 			}
 
-			int serialId = m_SerialId;
+			int serialId = m_ChunkId;
 			bool loadedEnterChunk = false;
 			//配表地图块资源包括自身，所以添加进筛选队列。
 			m_BeingLoadedAssetNames.Clear();
@@ -515,15 +618,11 @@ namespace Cherry
 					{
 						if (assetName == chunkAssetName)
 							loadedEnterChunk = true;
-						serialId = ++m_SerialId;
+						serialId = ++m_ChunkId;
 						m_ChunksBeingLoaded.Add(serialId, assetName);
 						m_ResourceManager.LoadAsset(assetName, priority, m_LoadAssetCallbacks, LoadingChunkInfo.Create(serialId, userData, assetName == chunkAssetName,false));
 					}
 				}
-			}
-			else//无需加载
-			{
-
 			}
 
 			foreach (string assetName in m_DependentAssetNames)
@@ -535,12 +634,14 @@ namespace Cherry
 
 					IDataTable<DRChunk> dataTable = GameEntry.DataTable.GetDataTable<DRChunk>();
 					DRChunk dataRow = dataTable.GetDataRow((DRChunk m_DataRow) => { return m_DataRow.ChunkAssetName == assetName; });
-					ChunkGroup chunkGroup = (ChunkGroup)GetChunkGroup(dataRow.ChunkGroupName);
 
-					IChunk chunk = m_ChunkHelper.CreateChunk(chunkInstanceObject.Target, chunkGroup, userData);
-					chunkGroup.AddChunk(chunk);
+					ChunkGroup chunkGroup = (ChunkGroup)GetChunkGroup(dataRow.ChunkGroupName);
+					IChunk tempChunk = m_ChunkHelper.CreateChunk(chunkInstanceObject.Target, chunkGroup, userData);
+					tempChunk.OnInit(dataRow.Id, assetName, m_DependentAssetNames, chunkGroup, false, null);
+					chunkGroup.AddChunk(tempChunk);
 				}
-			}			
+			}
+			Chunk chunk = GetChunk(chunkAssetName) as Chunk;
 			GetChunk(chunkAssetName).OnEnter(userData);
 			return serialId;
 		}
@@ -582,9 +683,9 @@ namespace Cherry
 			long lastYieldTime = DateTime.Now.Ticks;
 			while (true)
 			{
-				if (tilemapDatas.Count > 0)
+				if (m_BeingSetTilemapDatas.Count > 0)
 				{
-					TilemapData data = tilemapDatas[0];
+					TilemapData data = m_BeingSetTilemapDatas[0].TilemapData;
 					Debug.LogWarning(data.TilemapName);
 					Tilemap tilemap = GameObject.Find(data.TilemapName).GetComponent<Tilemap>();
 					foreach (var item in data.TileInfoList)
@@ -596,7 +697,8 @@ namespace Cherry
 							lastYieldTime = DateTime.Now.Ticks;
 						}
 					}
-					tilemapDatas.RemoveAt(0);
+					(GetChunk(m_BeingSetTilemapDatas[0].ChunkData.ChunkAssetName) as Chunk).IsReady = true;
+					m_BeingSetTilemapDatas.RemoveAt(0);
 				}
 				if (DateTime.Now.Ticks - lastYieldTime > 200000)
 				{
@@ -606,17 +708,45 @@ namespace Cherry
 			}
 		}
 
+		[Obsolete]
 		private bool InternalGetBeingLoadedAssetNames(List<string> beingLoadedAssetNames)
 		{
 			m_CachedAssetNames.Clear();
 			bool isNeededLoad = false;
 			foreach (string assetName in beingLoadedAssetNames)
 			{
-				if (m_InstancePool.CanSpawn(assetName))
+				if (!m_InstancePool.CanSpawn(assetName))
 				{
-
+					m_CachedAssetNames.Add(assetName);
+					isNeededLoad = true;
 				}
-				else
+			}
+			beingLoadedAssetNames.Clear();
+			foreach (string assetName in m_CachedAssetNames)
+			{
+				beingLoadedAssetNames.Add(assetName);
+			}
+
+			return isNeededLoad;
+		}
+
+		private bool InternalGetBeingLoadedAssetNames(List<int> beingLoadedChunkIds, List<string> beingLoadedAssetNames)
+		{
+			beingLoadedAssetNames.Clear();
+			foreach (int id in beingLoadedChunkIds)
+			{
+				DRChunk datarow = GameEntry.DataTable.GetDataTable<DRChunk>().GetDataRow(id);
+				beingLoadedAssetNames.Add(datarow.ChunkAssetName);
+				if (!m_ChunkName2IdDict.ContainsValue(id))
+				{
+					m_ChunkName2IdDict.Add(datarow.ChunkAssetName,id);
+				}
+			}
+
+			bool isNeededLoad = false;
+			foreach (string assetName in beingLoadedAssetNames)
+			{
+				if (!m_InstancePool.CanSpawn(assetName))
 				{
 					m_CachedAssetNames.Add(assetName);
 					isNeededLoad = true;
@@ -633,25 +763,26 @@ namespace Cherry
 
 		private void LoadAssetSuccessCallback(string chunkAssetName, object chunkAsset, float duration, object userData)
 		{
-			LoadingChunkInfo loadingChunkInfo = (LoadingChunkInfo)userData;
+			LoadingChunkInfo loadingChunkInfo = userData as LoadingChunkInfo;
+			ChunkParams param = loadingChunkInfo.UserData as ChunkParams;
+			param.TilemapData = chunkAsset as TilemapData;
+
 			if (loadingChunkInfo == null)
 			{
 				throw new GameFrameworkException("Open UI form info is invalid.");
 			}
 
-			IDataTable<DRChunk> dataTable = GameEntry.DataTable.GetDataTable<DRChunk>();
-			DRChunk dataRow = dataTable.GetDataRow((DRChunk m_DataRow) => { return m_DataRow.ChunkAssetName == chunkAssetName; });
-			ChunkGroup group = (ChunkGroup)GetChunkGroup(dataRow.ChunkGroupName);
+			ChunkGroup group = (ChunkGroup)GetChunkGroup(param.ChunkData.ChunkGroupName);
 
-			if (m_ChunksToReleaseOnLoad.Contains(loadingChunkInfo.SerialId))
+			if (m_ChunksToReleaseOnLoad.Contains(loadingChunkInfo.ChunkId))
 			{
-				m_ChunksToReleaseOnLoad.Remove(loadingChunkInfo.SerialId);
+				m_ChunksToReleaseOnLoad.Remove(loadingChunkInfo.ChunkId);
 				ReferencePool.Release(loadingChunkInfo);
 				m_ChunkHelper.ReleaseChunk(chunkAsset, null);
 				return;
 			}
 
-			m_ChunksBeingLoaded.Remove(loadingChunkInfo.SerialId);
+			m_ChunksBeingLoaded.Remove(loadingChunkInfo.ChunkId);
 			//加载地图成功后，不管如何都是注册进对象池且使用，直到卸载才会回收入对象池
 			ChunkInstanceObject chunkInstanceObject = ChunkInstanceObject.Create(chunkAssetName, chunkAsset, m_ChunkHelper.InstantiateChunk(chunkAsset), m_ChunkHelper);
 			m_InstancePool.Register(chunkInstanceObject, true);
@@ -659,13 +790,13 @@ namespace Cherry
 			//加载地图成功后，初始化地图块相关信息，而不是在进入时初始化
 			m_DependentAssetNames.Clear();
 			m_ChunkHelper.GetDependentChunkAssetNames(chunkAssetName, m_DependentAssetNames);
-			IChunk chunk = m_ChunkHelper.CreateChunk(chunkInstanceObject.Target, group, userData);
-			chunk.OnInit(loadingChunkInfo.SerialId, chunkAssetName, m_DependentAssetNames, group, true, userData);
+			IChunk chunk = m_ChunkHelper.CreateChunk(chunkInstanceObject.Target, group, param);
+			chunk.OnInit(loadingChunkInfo.ChunkId, chunkAssetName, m_DependentAssetNames, group, true, param);
 			group.AddChunk(chunk);
 			//loadingChunkInfo.ChunkGroup.Refresh();
 			ReferencePool.Release(loadingChunkInfo);
 
-			tilemapDatas.Add(chunkAsset as TilemapData);
+			m_BeingSetTilemapDatas.Add(param);
 		}
 
 		private void LoadAssetFailureCallback(string chunkAssetName, LoadResourceStatus status, string errorMessage, object userData)
@@ -676,13 +807,13 @@ namespace Cherry
 				throw new GameFrameworkException("Open UI form info is invalid.");
 			}
 
-			if (m_ChunksToReleaseOnLoad.Contains(loadingChunkInfo.SerialId))
+			if (m_ChunksToReleaseOnLoad.Contains(loadingChunkInfo.ChunkId))
 			{
-				m_ChunksToReleaseOnLoad.Remove(loadingChunkInfo.SerialId);
+				m_ChunksToReleaseOnLoad.Remove(loadingChunkInfo.ChunkId);
 				return;
 			}
 
-			m_ChunksBeingLoaded.Remove(loadingChunkInfo.SerialId);
+			m_ChunksBeingLoaded.Remove(loadingChunkInfo.ChunkId);
 			string appendErrorMessage = Utility.Text.Format("Load Chunk failure, asset name '{0}', status '{1}', error message '{2}'.", chunkAssetName, status.ToString(), errorMessage);
 
 			throw new GameFrameworkException(appendErrorMessage);

@@ -224,19 +224,14 @@ namespace Cherry
 			return m_MapManager.AddChunkGroup(chunkGroupName,chunkGroupHelper);
 		}
 
-		public void LoadChunk(ChunkType chunkType)
+		public void LoadChunk(ChunkType chunkType ,object userData = null)
 		{
-			m_MapManager.LoadChunk(chunkType);
+			m_MapManager.LoadChunk(chunkType,userData);
 		}
 
-		public void LoadChunk(string chunkAssetName)
+		public void EnterChunk(ChunkType chunkType, int priority = 0, object userData = null)
 		{
-			m_MapManager.LoadChunk(chunkAssetName);
-		}
-
-		public void EnterChunk(string chunkAssetName)
-		{
-			m_MapManager.EnterChunk(chunkAssetName, 0, null);
+			m_MapManager.EnterChunk(chunkType, priority, userData);
 		}
 
 		public void LeaveChunk(IChunk chunk)

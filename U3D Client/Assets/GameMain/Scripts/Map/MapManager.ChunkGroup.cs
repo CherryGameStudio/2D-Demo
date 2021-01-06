@@ -80,7 +80,7 @@ namespace Cherry
 			{
 				foreach (ChunkInfo chunkInfo in m_ChunkInfos)
 				{
-					if (chunkInfo.Chunk.SerialId == serialId)
+					if (chunkInfo.Chunk.ChunkId == serialId)
 					{
 						return true;
 					}
@@ -111,7 +111,7 @@ namespace Cherry
 			{
 				foreach (ChunkInfo chunkInfo in m_ChunkInfos)
 				{
-					if (chunkInfo.Chunk.SerialId == serialId)
+					if (chunkInfo.Chunk.ChunkId == serialId)
 					{
 						return chunkInfo.Chunk;
 					}
@@ -214,7 +214,7 @@ namespace Cherry
 				ChunkInfo chunkInfo = GetChunkInfo(chunk);
 				if (chunkInfo == null)
 				{
-					throw new GameFrameworkException(Utility.Text.Format("Can not find Chunk form info for serial id '{0}', Chunk asset name is '{1}'.", chunk.SerialId.ToString(), chunk.ChunkAssetName));
+					throw new GameFrameworkException(Utility.Text.Format("Can not find Chunk form info for serial id '{0}', Chunk asset name is '{1}'.", chunk.ChunkId.ToString(), chunk.ChunkAssetName));
 				}
 
 				if (!chunkInfo.Pause)
@@ -230,7 +230,7 @@ namespace Cherry
 
 				if (!m_ChunkInfos.Remove(chunkInfo))
 				{
-					throw new GameFrameworkException(Utility.Text.Format("Chunk group '{0}' not exists specified chunk '[{1}]{2}'.", m_Name, chunk.SerialId.ToString(), chunk.ChunkAssetName));
+					throw new GameFrameworkException(Utility.Text.Format("Chunk group '{0}' not exists specified chunk '[{1}]{2}'.", m_Name, chunk.ChunkId.ToString(), chunk.ChunkAssetName));
 				}
 
 				ReferencePool.Release(chunkInfo);

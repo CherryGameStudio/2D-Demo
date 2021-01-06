@@ -36,6 +36,17 @@ namespace Cherry
 			}
 		}
 
+		public override void GetDependentChunkIds(int chunkId, List<int> chunkIds)
+		{
+			IDataTable<DRChunk> dataTable = GameEntry.DataTable.GetDataTable<DRChunk>();
+			DRChunk dataRow = dataTable.GetDataRow(chunkId);
+			chunkIds.Clear();
+			foreach (int id in dataRow.DependentChunkId)
+			{
+				chunkIds.Add(id);
+			}
+		}
+
 		public override object InstantiateChunk(object chunkFormAsset)
 		{
 			GameObject go = new GameObject((chunkFormAsset as TilemapData).TilemapName);

@@ -8,6 +8,7 @@ namespace Cherry
 	{
 		public abstract IChunk CreateChunk(object chunkInstance, IChunkGroup chunkGroup, object userData);
 		public abstract void GetDependentChunkAssetNames(string chunkAssetName, List<string> chunkAssetNames);
+		public abstract void GetDependentChunkIds(int chunkId, List<int> chunkIds);
 		public abstract object InstantiateChunk(object chunkFormAsset);
 		public abstract void ReleaseChunk(object chunkAsset, object chunkInstance);
 	}

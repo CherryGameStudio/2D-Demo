@@ -16,6 +16,11 @@ namespace Cherry
 			private object m_ChunkAsset;
 			private IChunkHelper m_ChunkHelper;
 
+			public object ChunkAsset
+			{
+				get { return m_ChunkAsset; }
+			}
+
 			public ChunkInstanceObject()
 			{
 				m_ChunkAsset = null;

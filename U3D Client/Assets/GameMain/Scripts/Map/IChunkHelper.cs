@@ -36,7 +36,14 @@ namespace Cherry
 		/// 获取地图块所有依赖的地图块资源名称，包括自己。
 		/// </summary>
 		/// <param name="chunkAssetName">地图块资源名称。</param>
-		/// <param name="chunkAssetNames">依赖的地图块资源名称，包括自身。</param>
+		/// <param name="chunkAssetNames">依赖的地图块资源名称，包括自己。</param>
 		void GetDependentChunkAssetNames(string chunkAssetName,List<string> chunkAssetNames);
+
+		/// <summary>
+		/// 获取地图块所有依赖的地图块Id，包括自己。
+		/// </summary>
+		/// <param name="chunkId">地图块Id。</param>
+		/// <param name="chunkIds">依赖的地图块Id，包括自己。</param>
+		void GetDependentChunkIds(int chunkId, List<int> chunkIds);
 	}
 }

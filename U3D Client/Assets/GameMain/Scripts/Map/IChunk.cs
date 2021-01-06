@@ -12,7 +12,7 @@ namespace Cherry
 		/// <summary>
 		/// 获取地图块序列编号。
 		/// </summary>
-		int SerialId
+		int ChunkId
 		{
 			get;
 		}

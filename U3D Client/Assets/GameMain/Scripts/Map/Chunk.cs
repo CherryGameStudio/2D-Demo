@@ -11,7 +11,9 @@ namespace Cherry
 	public class Chunk : MonoBehaviour, IChunk
 	{
 		[SerializeField]
-		private int m_SerialId;
+		private int m_ChunkId;
+		[SerializeField]
+		private bool m_IsReady;
 		[SerializeField]
 		private string m_ChunkAssetName;
 		[SerializeField]
@@ -19,9 +21,15 @@ namespace Cherry
 		private IChunkGroup m_ChunkGroup;
 		private ChunkLogic m_ChunkLogic;
 
-		public int SerialId
+		public int ChunkId
 		{
-			get { return m_SerialId; }
+			get { return m_ChunkId; }
+		}
+
+		public bool IsReady
+		{
+			get { return m_IsReady; }
+			set { m_IsReady = value; }
 		}
 
 		public string ChunkAssetName
@@ -49,7 +57,6 @@ namespace Cherry
 			get { return m_DependentChunkAssetNames; }
 		}
 
-		[SerializeField]
 		public int ChunkDependencyAssetCount
 		{
 			get { return m_DependentChunkAssetNames.Count; }
@@ -57,7 +64,7 @@ namespace Cherry
 
 		public void OnInit(int serialId, string chunkAssetName,List<string> chunkDependentAssetNames, IChunkGroup chunkGroup, bool isNewInstance, object userData)
 		{
-			m_SerialId = serialId;
+			m_ChunkId = serialId;
 			m_ChunkAssetName = chunkAssetName;
 			m_ChunkGroup = chunkGroup;
 			foreach (string assetName in chunkDependentAssetNames)
@@ -82,7 +89,7 @@ namespace Cherry
 			}
 			catch (Exception exception)
 			{
-				GLogger.ErrorFormat(Log_Channel.Chunk,"Chunk '[{0}]{1}' OnInit with exception '{2}'.", m_SerialId.ToString(), m_ChunkAssetName, exception.ToString());
+				GLogger.ErrorFormat(Log_Channel.Chunk,"Chunk '[{0}]{1}' OnInit with exception '{2}'.", m_ChunkId.ToString(), m_ChunkAssetName, exception.ToString());
 			}
 		}
 
@@ -94,10 +101,10 @@ namespace Cherry
 			}
 			catch (Exception exception)
 			{
-				GLogger.ErrorFormat(Log_Channel.Chunk, "Chunk '[{0}]{1}' OnRecycle with exception '{2}'.", m_SerialId.ToString(), m_ChunkAssetName, exception.ToString());
+				GLogger.ErrorFormat(Log_Channel.Chunk, "Chunk '[{0}]{1}' OnRecycle with exception '{2}'.", m_ChunkId.ToString(), m_ChunkAssetName, exception.ToString());
 			}
 
-			m_SerialId = 0;
+			m_ChunkId = 0;
 		}
 
 		public void OnEnter(object userData)
@@ -108,7 +115,7 @@ namespace Cherry
 			}
 			catch (Exception exception)
 			{
-				GLogger.ErrorFormat(Log_Channel.Chunk, "Chunk '[{0}]{1}' OnEnter with exception '{2}'.", m_SerialId.ToString(), m_ChunkAssetName, exception.ToString());
+				GLogger.ErrorFormat(Log_Channel.Chunk, "Chunk '[{0}]{1}' OnEnter with exception '{2}'.", m_ChunkId.ToString(), m_ChunkAssetName, exception.ToString());
 			}
 		}
 
@@ -120,7 +127,7 @@ namespace Cherry
 			}
 			catch (Exception exception)
 			{
-				GLogger.ErrorFormat(Log_Channel.Chunk, "Chunk '[{0}]{1}' OnLeave with exception '{2}'.", m_SerialId.ToString(), m_ChunkAssetName, exception.ToString());
+				GLogger.ErrorFormat(Log_Channel.Chunk, "Chunk '[{0}]{1}' OnLeave with exception '{2}'.", m_ChunkId.ToString(), m_ChunkAssetName, exception.ToString());
 			}
 		}
 
@@ -132,7 +139,7 @@ namespace Cherry
 			}
 			catch (Exception exception)
 			{
-				GLogger.ErrorFormat(Log_Channel.Chunk, "Chunk '[{0}]{1}' OnPause with exception '{2}'.", m_SerialId.ToString(), m_ChunkAssetName, exception.ToString());
+				GLogger.ErrorFormat(Log_Channel.Chunk, "Chunk '[{0}]{1}' OnPause with exception '{2}'.", m_ChunkId.ToString(), m_ChunkAssetName, exception.ToString());
 			}
 		}
 
@@ -144,7 +151,7 @@ namespace Cherry
 			}
 			catch (Exception exception)
 			{
-				GLogger.ErrorFormat(Log_Channel.Chunk, "Chunk '[{0}]{1}' OnResume with exception '{2}'.", m_SerialId.ToString(), m_ChunkAssetName, exception.ToString());
+				GLogger.ErrorFormat(Log_Channel.Chunk, "Chunk '[{0}]{1}' OnResume with exception '{2}'.", m_ChunkId.ToString(), m_ChunkAssetName, exception.ToString());
 			}
 		}
 
@@ -156,7 +163,7 @@ namespace Cherry
 			}
 			catch (Exception exception)
 			{
-				GLogger.ErrorFormat(Log_Channel.Chunk, "Chunk '[{0}]{1}' OnUpdate with exception '{2}'.", m_SerialId.ToString(), m_ChunkAssetName, exception.ToString());
+				GLogger.ErrorFormat(Log_Channel.Chunk, "Chunk '[{0}]{1}' OnUpdate with exception '{2}'.", m_ChunkId.ToString(), m_ChunkAssetName, exception.ToString());
 			}
 		}
 	}
