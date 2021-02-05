@@ -4,6 +4,8 @@ using System.Collections;
 using GameFramework.DataTable;
 using Cherry.Tilemaps;
 using UnityEngine.Tilemaps;
+using UnityGameFramework.Runtime;
+using GameFramework.Event;
 
 namespace Cherry
 {
@@ -13,6 +15,7 @@ namespace Cherry
 		{
 			base.OnOpen(userData);
 			UnityGameFramework.Runtime.Log.Info("打开主界面");
+			GameEntry.Event.Subscribe(ShowEntitySuccessEventArgs.EventId, OnShowEntitySuccess);
 		}
 
 		public override void OnClick(GameObject gameObject)
@@ -23,8 +26,8 @@ namespace Cherry
 				//GameEntry.Resource.LoadAsset("Assets/GameMain/AssetData/Map/DarkForest/Forest.asset", new GameFramework.Resource.LoadAssetCallbacks(LoadSuccess));
 				//GameEntry.Map.LoadChunk("Assets/GameMain/AssetData/Map/DarkForest/Forest.asset");
 				GameEntry.Map.LoadChunk(ChunkType.Forest);
-
-
+				GameEntry.Entity.ShowEntity<PlayerCharacter>(1, "Assets/GameMain/AssetData/Character/Player/Player.prefab", "Player");
+				Entity entity = GameEntry.Entity.GetEntity(1);
 				//GameEntry.Scene.LoadSceneBySceneType(SceneType.TestScene);
 				//GameEntry.UI.CloseUIForm(this.UIForm);
 
@@ -74,6 +77,11 @@ namespace Cherry
 				yield return new WaitForEndOfFrame();
 			}
 			yield return null;
+		}
+
+		private void OnShowEntitySuccess(object sender, GameEventArgs e)
+		{
+			Debug.Log("实体加载成功");
 		}
 	}
 }

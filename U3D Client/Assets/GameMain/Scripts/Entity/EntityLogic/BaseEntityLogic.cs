@@ -4,10 +4,15 @@ using UnityEngine;
 namespace Cherry
 {
 	/// <summary>
-	/// 游戏实体抽象类
+	/// 游戏实体抽象类。
 	/// </summary>
 	public abstract class BaseEntityLogic : EntityLogic
 	{
+		public int Id
+		{
+			get { return base.Entity.Id; }
+		}
+
 		/// <summary>
 		/// 实体初始化。
 		/// </summary>

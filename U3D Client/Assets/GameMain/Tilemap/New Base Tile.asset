@@ -31,10 +31,9 @@ MonoBehaviour:
     e31: 0
     e32: 0
     e33: 1
-  m_InstancedGameObject: {fileID: 4689690029273263537, guid: 46963a5720fbbf647b04419784fad180,
-    type: 3}
+  m_InstancedGameObject: {fileID: 0}
   m_Flags: 3
-  m_ColliderType: 1
+  m_ColliderType: 2
   IsNpc: 0
   NpcName: 54
   IsMonsterCreator: 0
